@@ -1,18 +1,32 @@
-extend layout
+const express = require('express');
+const bcrypt = require('bcrypt');
+const router = express.Router();
 
-block content
-  .form-container
-    form(class="form-signin" method="POST" action="/auth/login")
-      h2 Please Login
+const User = require('../models/User');
 
-      .form-group
-        label( for="username" class="sr-only") Username
-        input(type="text" name="username" id="username" class="form-control" placeholder="Username" required)
+router.post('/login', async (req, res) => {
+  const { username, password } = req.body;
 
-      .form-group
-        label(for="password" class="sr-only") Password
-        input(type="password" name="password" id="password" class="form-control" placeholder="Password" required)
+  // simple validation
+  if (!username || !password) {
+    return res.render('register', { message: 'Please try again' });
+  }
 
-      button(class="btn btn-primary btn-block" type="submit") Login
+  const user = await User.findOne({
+    username
+  });
 
-      a(href="/register", class="btn btn-link") Don't have an account?
+  if (user) {
+    const isCorrect = bcrypt.compareSync(password, user.password);
+
+    if (isCorrect) {
+      return res.render('index', { user });
+    } else {
+      return res.render('login', { message: 'Username or Password incorrect' });
+    }
+  } else {
+    return res.render('login', { message: 'Username does not exist.' });
+  }
+});
+
+module.exports = router;
